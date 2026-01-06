@@ -20,28 +20,31 @@ export interface User {
 }
 
 // Register a new user with PIN
+
 export async function registerUser(name: string, pin: string): Promise<User> {
   const pinHash = hashPin(pin);
 
   const { data, error } = await supabase
-    .from('users')
-    .insert({ name, pin_hash: pinHash })
-    .select()
+    .rpc('api_register', {
+      name,
+      pin_hash_input: pinHash
+    })
     .single();
 
   if (error) throw error;
-  return data;
+  return data as User;
 }
 
+// Login with PIN - returns user if found
 // Login with PIN - returns user if found
 export async function loginWithPin(pin: string): Promise<User | null> {
   const pinHash = hashPin(pin);
 
-  // Find user with matching PIN hash
+  // Use Secure RPC to bypass RLS for checking credentials
   const { data, error } = await supabase
-    .from('users')
-    .select('id, name, created_at')
-    .eq('pin_hash', pinHash)
+    .rpc('api_login', {
+      pin_hash_input: pinHash
+    })
     .single();
 
   if (error) {
@@ -52,17 +55,16 @@ export async function loginWithPin(pin: string): Promise<User | null> {
     throw error;
   }
 
-  return data;
+  return data as User | null;
 }
 
 // Check if any users exist (for first-time setup)
 export async function hasAnyUsers(): Promise<boolean> {
-  const { count, error } = await supabase
-    .from('users')
-    .select('*', { count: 'exact', head: true });
+  const { data, error } = await supabase
+    .rpc('api_has_any_users');
 
   if (error) throw error;
-  return (count ?? 0) > 0;
+  return !!data;
 }
 
 // Get user by ID
