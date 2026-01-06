@@ -58,7 +58,14 @@ export default function PunchcardsPage() {
       );
 
       setHabits(updatedHabits);
-      setRewards(rewardsData.filter(r => r.is_active));
+      const normalizedRewards = rewardsData
+  .filter(r => r.is_active)
+  .map(r => ({
+    ...r,
+    description: r.description ?? undefined, // convert null → undefined
+  }));
+
+setRewards(normalizedRewards);
     } catch (err) {
       console.error('Error fetching punchcards:', err);
     } finally {
