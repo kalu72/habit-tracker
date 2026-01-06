@@ -1,5 +1,5 @@
 // Frequency types for habits
-export type FrequencyType = 'daily' | 'times_per_week' | 'times_per_month' | 'monthly_on_weeks';
+export type FrequencyType = 'daily' | 'times_per_week' | 'times_per_month' | 'monthly_on_weeks' | 'weekly' |;
 
 // Reward types for punchcard claiming
 export type RewardType = 'direct' | 'jackpot';
