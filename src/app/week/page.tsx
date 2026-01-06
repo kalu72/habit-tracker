@@ -96,7 +96,8 @@ export default function WeekPage() {
 
     try {
       setTogglingCell(cellKey);
-      const result = await toggleHabitCompletionForDate(habitId, userId, date, isCompleted);
+	const result: { newCompletionState: boolean; creditsAdjusted?: boolean } =
+  		await toggleHabitCompletionForDate(habitId, userId, date, isCompleted);
 
       // Optimistic update
       setHabits(prevHabits =>
