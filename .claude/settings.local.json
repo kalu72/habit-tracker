@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(cat:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(taskkill /F /PID 19020)",
+      "Bash(taskkill //F //PID 19020)",
+      "Bash(taskkill //F //PID 9844)",
+      "Bash(supabase --version:*)",
+      "Bash(find:*)"
+    ]
+  }
+}
