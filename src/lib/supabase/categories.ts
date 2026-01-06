@@ -68,9 +68,14 @@ export async function createDefaultCategories(userId: string): Promise<Category[
     { name: 'Productivity', color: '#eab308', icon: '⚡' },
   ];
 
+  // Use upsert to avoid duplicates if they already partially exist
+  // We match on (user_id, name) thanks to the new unique constraint
   const { data, error } = await supabase
     .from('categories')
-    .insert(defaults.map(cat => ({ ...cat, user_id: userId })))
+    .upsert(
+      defaults.map(cat => ({ ...cat, user_id: userId })),
+      { onConflict: 'user_id, name', ignoreDuplicates: true }
+    )
     .select();
 
   if (error) throw error;
