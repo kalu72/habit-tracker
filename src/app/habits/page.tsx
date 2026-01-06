@@ -61,35 +61,41 @@ export default function HabitsPage() {
     setScheduledDays(getDefaultScheduledDays(frequencyType));
   }, [frequencyType]);
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!userId) return;
+useEffect(() => {
+  async function fetchData() {
+    if (!userId) return;
 
-      try {
-        setIsLoading(true);
-        let cats = await getCategories(userId);
+    try {
+      setIsLoading(true);
+      let cats = await getCategories(userId);
 
-        if (cats.length === 0) {
-          cats = await createDefaultCategories(userId);
-        }
-
-        const [habitsData, rewardsData] = await Promise.all([
-          getHabitsWithStats(userId),
-          getRewards(userId)
-        ]);
-
-        setCategories(cats);
-        setHabits(habitsData);
-        setRewards(rewardsData);
-      } catch (err) {
-        console.error('Error fetching data:', err);
-      } finally {
-        setIsLoading(false);
+      if (cats.length === 0) {
+        cats = await createDefaultCategories(userId);
       }
-    }
 
-    fetchData();
-  }, [userId]);
+      const [habitsData, rewardsData] = await Promise.all([
+        getHabitsWithStats(userId),
+        getRewards(userId)
+      ]);
+
+      // Normalize rewards: convert null description → undefined
+      const normalizedRewards = rewardsData.map(r => ({
+        ...r,
+        description: r.description ?? undefined,
+      }));
+
+      setCategories(cats);
+      setHabits(habitsData);
+      setRewards(normalizedRewards); // use normalized rewards here
+    } catch (err) {
+      console.error('Error fetching data:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  fetchData();
+}, [userId]);
 
   const getFrequencyText = (type: FrequencyType, value: number) => {
     switch (type) {
