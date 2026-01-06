@@ -4,10 +4,29 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // Client-side Supabase client
+// We wrap the fetch method to inject the user ID from localStorage into every request header.
+// This ensures that RLS policies work statelessly without relying on connection-pooled session variables.
+const customFetch = (url: RequestInfo | URL, options: RequestInit = {}) => {
+  const userId = typeof window !== 'undefined' ? localStorage.getItem('habit_tracker_user_id') : null;
+
+  const headers = new Headers(options.headers);
+  if (userId) {
+    headers.set('x-user-id', userId);
+  }
+
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+  },
+  global: {
+    fetch: customFetch,
   },
 });
 
