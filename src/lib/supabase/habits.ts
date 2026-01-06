@@ -636,6 +636,15 @@ export async function claimPunchcardReward(habitId: string): Promise<void> {
   if (error) throw error;
 }
 
+// Recalculate punchcards for user (fix drift)
+export async function recalculatePunchcards(userId: string): Promise<void> {
+  const { error } = await supabase.rpc('recalculate_punchcards', {
+    user_id_param: userId
+  });
+
+  if (error) throw error;
+}
+
 // =====================================================
 // MONTHLY SCHEDULING HELPER
 // =====================================================
