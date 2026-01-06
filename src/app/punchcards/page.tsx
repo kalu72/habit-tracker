@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { AppShell } from '@/components/layout';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { getHabitsWithPunchcards, updatePunchcardProgress, claimPunchcardReward } from '@/lib/supabase/habits';
+import { getHabitsWithPunchcards, updatePunchcardProgress, claimPunchcardReward, recalculatePunchcards } from '@/lib/supabase/habits';
 import { getRewards } from '@/lib/supabase/rewards';
 import type { HabitWithPunchcard, Reward } from '@/types';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ export default function PunchcardsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [animatingHabitId, setAnimatingHabitId] = useState<string | null>(null);
   const [claimingHabitId, setClaimingHabitId] = useState<string | null>(null);
+  const [isRepairing, setIsRepairing] = useState(false);
 
   // Modals
   const [showDirectModal, setShowDirectModal] = useState(false);
@@ -59,13 +60,13 @@ export default function PunchcardsPage() {
 
       setHabits(updatedHabits);
       const normalizedRewards = rewardsData
-  .filter(r => r.is_active)
-  .map(r => ({
-    ...r,
-    description: r.description ?? undefined, // convert null → undefined
-  }));
+        .filter(r => r.is_active)
+        .map(r => ({
+          ...r,
+          description: r.description ?? undefined, // convert null → undefined
+        }));
 
-setRewards(normalizedRewards);
+      setRewards(normalizedRewards);
     } catch (err) {
       console.error('Error fetching punchcards:', err);
     } finally {
@@ -136,7 +137,30 @@ setRewards(normalizedRewards);
   return (
     <AppShell>
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-        <h1 className="text-2xl font-bold">My Punchcards</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">My Punchcards</h1>
+          <button
+            onClick={async () => {
+              if (confirm('This will recalculate your punchcard progress based on your actual history. Use this if your counts seem wrong.')) {
+                try {
+                  setIsRepairing(true);
+                  if (userId) await recalculatePunchcards(userId);
+                  await fetchPunchcards();
+                  alert('Punchcards repaired!');
+                } catch (err) {
+                  console.error(err);
+                  alert('Failed to repair punchcards');
+                } finally {
+                  setIsRepairing(false);
+                }
+              }
+            }}
+            disabled={isRepairing}
+            className="text-xs bg-muted hover:bg-muted/80 text-muted-foreground px-3 py-1.5 rounded-full transition-colors"
+          >
+            {isRepairing ? 'Fixing...' : 'Repair Data'}
+          </button>
+        </div>
 
         {habits.length === 0 ? (
           <div className="text-center py-12 px-4">
