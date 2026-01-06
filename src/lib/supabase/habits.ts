@@ -597,7 +597,11 @@ export async function updatePunchcardProgress(
   if (countError) throw countError;
 
   const newCompletions = count || 0;
-  const newTotal = Math.min(
+  // Calculate new total (but don't update persistence yet - we just want to know for animation)
+  // CRITICAL FIX: Do NOT add newCompletions to punchcard_current here.
+  // The increment_punchcard RPC already handles the incrementing real-time when the habit is completed.
+  // This function is only for "catch-up" animation purposes to show the user what they missed.
+  const animatedTotal = Math.min(
     habit.punchcard_current + newCompletions,
     habit.punchcard_target
   );
@@ -606,7 +610,7 @@ export async function updatePunchcardProgress(
   const { error: updateError } = await supabase
     .from('habits')
     .update({
-      punchcard_current: newTotal,
+      // punchcard_current: newTotal, // REMOVED: Don't double count!
       punchcard_last_checked: new Date().toISOString()
     })
     .eq('id', habitId);
@@ -615,7 +619,7 @@ export async function updatePunchcardProgress(
 
   return {
     newCompletions,
-    currentTotal: newTotal
+    currentTotal: animatedTotal
   };
 }
 
