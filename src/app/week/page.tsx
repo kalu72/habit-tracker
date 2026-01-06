@@ -12,7 +12,9 @@ import {
 import { getWeekStart, getWeekDates, formatDateKey } from '@/lib/dates';
 import type { HabitWeeklyData } from '@/types';
 
-export default function WeekPage() {
+import { Suspense } from 'react';
+
+function WeekContent() {
   const { userId, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -96,8 +98,8 @@ export default function WeekPage() {
 
     try {
       setTogglingCell(cellKey);
-	const result: { newCompletionState: boolean; creditsAdjusted?: boolean } =
-  		await toggleHabitCompletionForDate(habitId, userId, date, isCompleted);
+      const result: { newCompletionState: boolean; creditsAdjusted?: boolean } =
+        await toggleHabitCompletionForDate(habitId, userId, date, isCompleted);
 
       // Optimistic update
       setHabits(prevHabits =>
@@ -234,5 +236,22 @@ export default function WeekPage() {
         )}
       </div>
     </AppShell>
+  );
+}
+
+export default function WeekPage() {
+  return (
+    <Suspense fallback={
+      <AppShell>
+        <div className="max-w-lg mx-auto px-4 py-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-muted rounded-lg w-32"></div>
+            <div className="h-64 bg-muted rounded-xl"></div>
+          </div>
+        </div>
+      </AppShell>
+    }>
+      <WeekContent />
+    </Suspense>
   );
 }
