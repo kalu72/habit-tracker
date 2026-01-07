@@ -43,6 +43,7 @@ export default function LoginPage() {
 
     try {
       // Try to login with PIN
+      console.log('Logging in with PIN...');
       const user = await loginWithPin(pinCode);
 
       if (user) {
@@ -52,12 +53,14 @@ export default function LoginPage() {
         router.push('/');
       } else {
         // New PIN - ask for name
+        console.log('New user detected, switching to registration');
         setIsNewUser(true);
         setIsLoading(false);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login error:', err);
-      setError('Something went wrong. Please try again.');
+      const msg = err.message || JSON.stringify(err);
+      setError(`Login Error (v1.1): ${msg}`);
       setPin('');
       setIsLoading(false);
     }
@@ -74,21 +77,23 @@ export default function LoginPage() {
 
     try {
       // Register new user
+      console.log('Registering user...');
       const user = await registerUser(name.trim(), pin);
+      console.log('User registered success:', user.id);
+
+      // Log them in immediately so RLS works for subsequent calls
+      await setCurrentUserId(user.id);
 
       // Create default categories for the new user
+      console.log('Creating default categories...');
       await createDefaultCategories(user.id);
 
-      // Create first punchcard
-      await createPunchcard(user.id);
-
-      // Log them in
-      await setCurrentUserId(user.id);
       localStorage.setItem('habit_tracker_name', user.name);
       router.push('/');
-    } catch (err) {
-      console.error('Registration error:', err);
-      setError('Something went wrong. Please try again.');
+    } catch (err: any) {
+      console.error('Registration error detail:', err);
+      const message = err.message || JSON.stringify(err);
+      setError(`Reg Error (v1.1): ${message.includes('fetch') ? 'Network error' : message}`);
     } finally {
       setIsLoading(false);
     }
@@ -107,6 +112,7 @@ export default function LoginPage() {
           <p className="text-muted-foreground text-sm">
             {isNewUser ? 'Welcome! Enter your name' : 'Enter your PIN to continue'}
           </p>
+          <div className="absolute top-2 right-2 text-[10px] text-muted-foreground opacity-50">v1.1</div>
         </CardHeader>
         <CardContent className="space-y-6">
           {isNewUser ? (

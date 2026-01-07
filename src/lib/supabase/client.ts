@@ -49,14 +49,22 @@ async function setSupabaseSessionVariable(userId: string | null) {
 
 // Set current user ID for RLS policies
 export async function setCurrentUserId(userId: string | null): Promise<void> {
-  // Set the session variable first (this is what RLS policies check)
-  await setSupabaseSessionVariable(userId);
-
-  // Then persist to localStorage for session restoration on reload
+  // 1. Persist to localStorage first
+  // This is the most reliable way as it's used by the stateless customFetch header
   if (userId) {
     localStorage.setItem('habit_tracker_user_id', userId);
   } else {
     localStorage.removeItem('habit_tracker_user_id');
+  }
+
+  // 2. Then try to set the session variable (legacy/secondary method)
+  // We do this after localStorage so that if this RPC fails, the header fallback still works.
+  try {
+    await setSupabaseSessionVariable(userId);
+  } catch (error) {
+    // We don't throw here - we want to continue even if the session variable RPC fails
+    // because the 'x-user-id' header via customFetch is our primary (and more robust) auth mechanism.
+    console.warn('Continuing without session variable:', error);
   }
 }
 
