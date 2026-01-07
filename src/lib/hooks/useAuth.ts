@@ -12,48 +12,48 @@ interface AuthState {
 }
 
 export function useAuth() {
-  const [authState, setAuthState] = useState<AuthState>({
-    isAuthenticated: false,
-    isLoading: true,
-    userId: null,
-    userName: null,
+  const [authState, setAuthState] = useState<AuthState>(() => {
+    // Try to get initial state synchronously from localStorage to prevent flash
+    if (typeof window !== 'undefined') {
+      const userId = localStorage.getItem('habit_tracker_user_id');
+      const userName = localStorage.getItem('habit_tracker_name');
+      if (userId) {
+        return { isAuthenticated: true, isLoading: false, userId, userName };
+      }
+    }
+    return { isAuthenticated: false, isLoading: true, userId: null, userName: null };
   });
+
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     async function initAuth() {
-      // Check for existing session in localStorage
-      const userId = localStorage.getItem('habit_tracker_user_id');
-      const userName = localStorage.getItem('habit_tracker_name');
+      const storedId = localStorage.getItem('habit_tracker_user_id');
+      const storedName = localStorage.getItem('habit_tracker_name');
 
-      if (userId) {
+      console.log(`[v1.2] initAuth check. Path: ${pathname}, ID in storage: ${storedId}`);
+
+      if (storedId) {
         try {
-          // Restore the Supabase session variable for RLS
-          await setCurrentUserId(userId);
+          // Restore/Verify session
+          await setCurrentUserId(storedId);
 
           setAuthState({
             isAuthenticated: true,
             isLoading: false,
-            userId,
-            userName,
+            userId: storedId,
+            userName: storedName,
           });
+          console.log('[v1.2] Auth success');
         } catch (error) {
-          console.error('Failed to restore session:', error);
-          // If session restoration fails, clear localStorage and redirect to login
-          localStorage.removeItem('habit_tracker_user_id');
-          localStorage.removeItem('habit_tracker_name');
-          setAuthState({
-            isAuthenticated: false,
-            isLoading: false,
-            userId: null,
-            userName: null,
-          });
-          if (pathname !== '/login') {
-            router.push('/login');
-          }
+          console.error('[v1.2] Session restoration failed:', error);
+          // Only clear if it's a definitive "user doesn't exist" or similar
+          // For now, let's be conservative and not wipe storage on random errors
+          setAuthState(prev => ({ ...prev, isLoading: false }));
         }
       } else {
+        console.log('[v1.2] No user ID found in storage');
         setAuthState({
           isAuthenticated: false,
           isLoading: false,
@@ -61,24 +61,26 @@ export function useAuth() {
           userName: null,
         });
 
-        // Redirect to login if not authenticated and not already on login page
+        // Redirect to login if not on login page
         if (pathname !== '/login') {
+          console.log(`[v1.2] Redirecting from ${pathname} to /login`);
           router.push('/login');
         }
       }
     }
 
-    initAuth();
-  }, [pathname, router]);
+    // Only run init if we're still "loading" or if we're on a page that needs auth
+    if (authState.isLoading || (pathname !== '/login' && !authState.isAuthenticated)) {
+      initAuth();
+    }
+  }, [router, pathname, authState.isLoading, authState.isAuthenticated]);
 
   const logout = useCallback(async () => {
-    // Clear the session variable
+    console.log('[v1.2] Logging out...');
     await setCurrentUserId(null);
-
-    // Clear localStorage
     localStorage.removeItem('habit_tracker_user_id');
-    localStorage.removeItem('habit_tracker_pin');
     localStorage.removeItem('habit_tracker_name');
+    localStorage.removeItem('habit_tracker_pin');
 
     setAuthState({
       isAuthenticated: false,

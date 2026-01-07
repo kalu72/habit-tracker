@@ -16,18 +16,17 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 2. Fix api_register (and move default setup here to avoid RLS race)
 DROP FUNCTION IF EXISTS api_register(TEXT, TEXT);
-CREATE OR REPLACE FUNCTION api_register(name_input TEXT, pin_hash_input TEXT)
+CREATE OR REPLACE FUNCTION api_register(name TEXT, pin_hash_input TEXT)
 RETURNS SETOF JSON AS $$
 DECLARE
   new_user users;
 BEGIN
-  -- 1. Create the user
+  -- 1. Create the user (use api_register.name to avoid ambiguity with column name)
   INSERT INTO users (name, pin_hash)
-  VALUES (name_input, pin_hash_input)
+  VALUES (api_register.name, pin_hash_input)
   RETURNING * INTO new_user;
 
   -- 2. Create default categories for the new user immediately
-  -- We do this here as SECURITY DEFINER to bypass initial RLS "chicken-and-egg" issues
   INSERT INTO categories (user_id, name, color, icon)
   VALUES 
     (new_user.id, 'Personal Care', '#ec4899', '✨'),
@@ -41,6 +40,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Ensure permissions are maintained
+-- 3. Clean up any existing duplicate PINs before adding constraint
+-- (Keeps the oldest record for each PIN)
+DELETE FROM users
+WHERE id IN (
+    SELECT id
+    FROM (
+        SELECT id,
+               ROW_NUMBER() OVER (PARTITION BY pin_hash ORDER BY created_at ASC) as row_num
+        FROM users
+    ) t
+    WHERE t.row_num > 1
+);
+
+-- 4. Ensure each PIN is unique to one account
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_pin_hash_key') THEN
+        ALTER TABLE users ADD CONSTRAINT users_pin_hash_key UNIQUE (pin_hash);
+    END IF;
+END $$;
+
+-- Ensure permissions
 GRANT EXECUTE ON FUNCTION api_login(TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION api_register(TEXT, TEXT) TO anon, authenticated;
