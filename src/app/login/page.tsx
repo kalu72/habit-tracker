@@ -58,9 +58,9 @@ export default function LoginPage() {
         setIsLoading(false);
       }
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('Login error detail:', err);
       const msg = err.message || JSON.stringify(err);
-      setError(`Login Error (v1.1): ${msg}`);
+      setError(`Login Error (v1.3): ${msg}`);
       setPin('');
       setIsLoading(false);
     }
@@ -86,11 +86,13 @@ export default function LoginPage() {
       await setCurrentUserId(user.id);
 
       localStorage.setItem('habit_tracker_name', user.name);
-      router.push('/');
+
+      // Use hard reload to ensure state is perfectly synced on the home page
+      window.location.href = '/';
     } catch (err: any) {
       console.error('Registration error detail:', err);
       const message = err.message || JSON.stringify(err);
-      setError(`Reg Error (v1.1): ${message.includes('fetch') ? 'Network error' : message}`);
+      setError(`Reg Error (v1.3): ${message.includes('fetch') ? 'Network error' : message}`);
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +111,7 @@ export default function LoginPage() {
           <p className="text-muted-foreground text-sm">
             {isNewUser ? 'Welcome! Enter your name' : 'Enter your PIN to continue'}
           </p>
-          <div className="absolute top-2 right-2 text-[10px] text-muted-foreground opacity-30">v1.2</div>
+          <div className="absolute top-2 right-2 text-[10px] text-muted-foreground font-bold">v1.3 - LATEST</div>
         </CardHeader>
         <CardContent className="space-y-6">
           {isNewUser ? (
