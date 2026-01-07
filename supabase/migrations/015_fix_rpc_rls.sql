@@ -5,23 +5,23 @@
 -- 1. Fix api_login
 DROP FUNCTION IF EXISTS api_login(TEXT);
 CREATE OR REPLACE FUNCTION api_login(pin_hash_input TEXT)
-RETURNS SETOF JSONB AS $$
+RETURNS TABLE(usr_id UUID, usr_name TEXT, usr_created_at TIMESTAMPTZ) AS $$
 BEGIN
   RETURN QUERY
-  SELECT to_jsonb(u)
+  SELECT u.id, u.name, u.created_at
   FROM users u
-  WHERE pin_hash = pin_hash_input;
+  WHERE u.pin_hash = pin_hash_input;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 2. Fix api_register (and move default setup here to avoid RLS race)
+-- 2. Fix api_register
 DROP FUNCTION IF EXISTS api_register(TEXT, TEXT);
 CREATE OR REPLACE FUNCTION api_register(name TEXT, pin_hash_input TEXT)
-RETURNS SETOF JSONB AS $$
+RETURNS TABLE(usr_id UUID, usr_name TEXT, usr_created_at TIMESTAMPTZ) AS $$
 DECLARE
   new_user users;
 BEGIN
-  -- 1. Create the user (use api_register.name to avoid ambiguity with column name)
+  -- 1. Create the user
   INSERT INTO users (name, pin_hash)
   VALUES (api_register.name, pin_hash_input)
   RETURNING * INTO new_user;
@@ -36,13 +36,12 @@ BEGIN
     (new_user.id, 'Productivity', '#eab308', '⚡')
   ON CONFLICT DO NOTHING;
   
-  -- 3. Return the user as JSONB
-  RETURN QUERY SELECT to_jsonb(new_user);
+  -- 3. Return the user structure
+  RETURN QUERY SELECT new_user.id, new_user.name, new_user.created_at;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 3. Clean up any existing duplicate PINs before adding constraint
--- (Keeps the oldest record for each PIN)
+-- 3. Clean up any existing duplicate PINs
 DELETE FROM users
 WHERE id IN (
     SELECT id
@@ -54,7 +53,7 @@ WHERE id IN (
     WHERE t.row_num > 1
 );
 
--- 4. Ensure each PIN is unique to one account
+-- 4. Ensure each PIN is unique
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_pin_hash_key') THEN

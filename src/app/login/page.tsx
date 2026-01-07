@@ -111,7 +111,7 @@ export default function LoginPage() {
           <p className="text-muted-foreground text-sm">
             {isNewUser ? 'Welcome! Enter your name' : 'Enter your PIN to continue'}
           </p>
-          <div className="absolute top-2 right-2 text-[10px] text-muted-foreground font-bold">v1.4 - DIAGNOSTIC</div>
+          <div className="absolute top-2 right-2 text-[10px] text-muted-foreground font-bold">v1.5 - FINAL FIX?</div>
         </CardHeader>
         <CardContent className="space-y-6">
           {isNewUser ? (

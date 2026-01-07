@@ -32,10 +32,14 @@ export async function registerUser(name: string, pin: string): Promise<User> {
     .single();
 
   if (error) throw error;
-  return data as User;
+
+  return {
+    id: (data as any).usr_id,
+    name: (data as any).usr_name,
+    created_at: (data as any).usr_created_at
+  };
 }
 
-// Login with PIN - returns user if found
 // Login with PIN - returns user if found
 export async function loginWithPin(pin: string): Promise<User | null> {
   const pinHash = hashPin(pin);
@@ -55,7 +59,11 @@ export async function loginWithPin(pin: string): Promise<User | null> {
     throw error;
   }
 
-  return data as User | null;
+  return {
+    id: (data as any).usr_id,
+    name: (data as any).usr_name,
+    created_at: (data as any).usr_created_at
+  };
 }
 
 // Check if any users exist (for first-time setup)
