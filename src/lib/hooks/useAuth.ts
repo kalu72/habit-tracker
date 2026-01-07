@@ -12,71 +12,76 @@ interface AuthState {
 }
 
 export function useAuth() {
-  const [authState, setAuthState] = useState<AuthState>(() => {
-    // Try to get initial state synchronously from localStorage to prevent flash
-    if (typeof window !== 'undefined') {
-      const userId = localStorage.getItem('habit_tracker_user_id');
-      const userName = localStorage.getItem('habit_tracker_name');
-      if (userId) {
-        return { isAuthenticated: true, isLoading: false, userId, userName };
-      }
-    }
-    return { isAuthenticated: false, isLoading: true, userId: null, userName: null };
+  const [authState, setAuthState] = useState<AuthState>({
+    isAuthenticated: false,
+    isLoading: true,
+    userId: null,
+    userName: null,
   });
 
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
+    let isMounted = true;
+
     async function initAuth() {
       const storedId = localStorage.getItem('habit_tracker_user_id');
       const storedName = localStorage.getItem('habit_tracker_name');
 
-      console.log(`[v1.2] initAuth check. Path: ${pathname}, ID in storage: ${storedId}`);
+      console.log(`[v1.4] Init check. Path: ${pathname}, Stored ID: ${storedId}`);
 
       if (storedId) {
         try {
           // Restore/Verify session
           await setCurrentUserId(storedId);
 
-          setAuthState({
-            isAuthenticated: true,
-            isLoading: false,
-            userId: storedId,
-            userName: storedName,
-          });
-          console.log('[v1.2] Auth success');
+          if (isMounted) {
+            setAuthState({
+              isAuthenticated: true,
+              isLoading: false,
+              userId: storedId,
+              userName: storedName,
+            });
+            console.log('[v1.4] Persistence verified.');
+          }
         } catch (error) {
-          console.error('[v1.2] Session restoration failed:', error);
-          // Only clear if it's a definitive "user doesn't exist" or similar
-          // For now, let's be conservative and not wipe storage on random errors
-          setAuthState(prev => ({ ...prev, isLoading: false }));
+          console.error('[v1.4] Restoration failed:', error);
+          if (isMounted) {
+            setAuthState({
+              isAuthenticated: false,
+              isLoading: false,
+              userId: null,
+              userName: null,
+            });
+          }
         }
       } else {
-        console.log('[v1.2] No user ID found in storage');
-        setAuthState({
-          isAuthenticated: false,
-          isLoading: false,
-          userId: null,
-          userName: null,
-        });
+        console.log('[v1.4] No session in localStorage.');
+        if (isMounted) {
+          setAuthState({
+            isAuthenticated: false,
+            isLoading: false,
+            userId: null,
+            userName: null,
+          });
 
-        // Redirect to login if not on login page
-        if (pathname !== '/login') {
-          console.log(`[v1.2] Redirecting from ${pathname} to /login`);
-          router.push('/login');
+          // Only redirect if we ARE NOT already on the login page
+          if (pathname !== '/login') {
+            console.log(`[v1.4] Redirecting from ${pathname} to /login`);
+            router.push('/login');
+          }
         }
       }
     }
 
-    // Only run init if we're still "loading" or if we're on a page that needs auth
-    if (authState.isLoading || (pathname !== '/login' && !authState.isAuthenticated)) {
-      initAuth();
-    }
-  }, [router, pathname, authState.isLoading, authState.isAuthenticated]);
+    initAuth();
+
+    return () => { isMounted = false; };
+  }, [pathname, router]);
 
   const logout = useCallback(async () => {
-    console.log('[v1.2] Logging out...');
+    console.log('[v1.4] Logging out...');
     await setCurrentUserId(null);
     localStorage.removeItem('habit_tracker_user_id');
     localStorage.removeItem('habit_tracker_name');

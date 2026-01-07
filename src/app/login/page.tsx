@@ -43,24 +43,27 @@ export default function LoginPage() {
 
     try {
       // Try to login with PIN
-      console.log('Logging in with PIN...');
+      console.log('[v1.4] Logging in with PIN...');
       const user = await loginWithPin(pinCode);
 
       if (user) {
         // Existing user - log them in
+        console.log('[v1.4] Login success, setting ID:', user.id);
         await setCurrentUserId(user.id);
         localStorage.setItem('habit_tracker_name', user.name);
-        router.push('/');
+
+        // Hard redirect to clear any complex SPA state issues
+        window.location.href = '/';
       } else {
         // New PIN - ask for name
-        console.log('New user detected, switching to registration');
+        console.log('[v1.4] New user detected');
         setIsNewUser(true);
         setIsLoading(false);
       }
     } catch (err: any) {
-      console.error('Login error detail:', err);
+      console.error('[v1.4] Login error detail:', err);
       const msg = err.message || JSON.stringify(err);
-      setError(`Login Error (v1.3): ${msg}`);
+      setError(`Login Error (v1.4): ${msg}`);
       setPin('');
       setIsLoading(false);
     }
@@ -77,22 +80,19 @@ export default function LoginPage() {
 
     try {
       // Register new user
-      // Note: The database now automatically creates default categories
-      console.log('Registering user...');
+      console.log('[v1.4] Registering user...');
       const user = await registerUser(name.trim(), pin);
-      console.log('User registered success:', user.id);
+      console.log('[v1.4] Registration success:', user.id);
 
-      // Log them in immediately
       await setCurrentUserId(user.id);
-
       localStorage.setItem('habit_tracker_name', user.name);
 
-      // Use hard reload to ensure state is perfectly synced on the home page
+      // Hard redirect to ensure home page starts with fresh auth state
       window.location.href = '/';
     } catch (err: any) {
-      console.error('Registration error detail:', err);
+      console.error('[v1.4] Registration error detail:', err);
       const message = err.message || JSON.stringify(err);
-      setError(`Reg Error (v1.3): ${message.includes('fetch') ? 'Network error' : message}`);
+      setError(`Reg Error (v1.4): ${message.includes('fetch') ? 'Network error' : message}`);
     } finally {
       setIsLoading(false);
     }
@@ -111,7 +111,7 @@ export default function LoginPage() {
           <p className="text-muted-foreground text-sm">
             {isNewUser ? 'Welcome! Enter your name' : 'Enter your PIN to continue'}
           </p>
-          <div className="absolute top-2 right-2 text-[10px] text-muted-foreground font-bold">v1.3 - LATEST</div>
+          <div className="absolute top-2 right-2 text-[10px] text-muted-foreground font-bold">v1.4 - DIAGNOSTIC</div>
         </CardHeader>
         <CardContent className="space-y-6">
           {isNewUser ? (

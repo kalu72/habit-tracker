@@ -5,10 +5,10 @@
 -- 1. Fix api_login
 DROP FUNCTION IF EXISTS api_login(TEXT);
 CREATE OR REPLACE FUNCTION api_login(pin_hash_input TEXT)
-RETURNS SETOF JSON AS $$
+RETURNS SETOF JSONB AS $$
 BEGIN
   RETURN QUERY
-  SELECT row_to_json(u)
+  SELECT to_jsonb(u)
   FROM users u
   WHERE pin_hash = pin_hash_input;
 END;
@@ -17,7 +17,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- 2. Fix api_register (and move default setup here to avoid RLS race)
 DROP FUNCTION IF EXISTS api_register(TEXT, TEXT);
 CREATE OR REPLACE FUNCTION api_register(name TEXT, pin_hash_input TEXT)
-RETURNS SETOF JSON AS $$
+RETURNS SETOF JSONB AS $$
 DECLARE
   new_user users;
 BEGIN
@@ -33,10 +33,11 @@ BEGIN
     (new_user.id, 'Fitness', '#84cc16', '💪'),
     (new_user.id, 'Learning', '#3b82f6', '📚'),
     (new_user.id, 'Health', '#f97316', '❤️'),
-    (new_user.id, 'Productivity', '#eab308', '⚡');
+    (new_user.id, 'Productivity', '#eab308', '⚡')
+  ON CONFLICT DO NOTHING;
   
-  -- 3. Return the user as JSON
-  RETURN QUERY SELECT row_to_json(new_user);
+  -- 3. Return the user as JSONB
+  RETURN QUERY SELECT to_jsonb(new_user);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -64,3 +65,4 @@ END $$;
 -- Ensure permissions
 GRANT EXECUTE ON FUNCTION api_login(TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION api_register(TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION set_session_user(UUID) TO anon, authenticated;
