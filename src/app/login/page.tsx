@@ -77,16 +77,13 @@ export default function LoginPage() {
 
     try {
       // Register new user
+      // Note: The database now automatically creates default categories
       console.log('Registering user...');
       const user = await registerUser(name.trim(), pin);
       console.log('User registered success:', user.id);
 
-      // Log them in immediately so RLS works for subsequent calls
+      // Log them in immediately
       await setCurrentUserId(user.id);
-
-      // Create default categories for the new user
-      console.log('Creating default categories...');
-      await createDefaultCategories(user.id);
 
       localStorage.setItem('habit_tracker_name', user.name);
       router.push('/');
