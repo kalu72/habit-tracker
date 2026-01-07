@@ -25,7 +25,7 @@ BEGIN
     VALUES (name, pin_hash_input)
     RETURNING *
   )
-  SELECT row_to_json(i) FROM inserted;
+  SELECT row_to_json(inserted) FROM inserted;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
