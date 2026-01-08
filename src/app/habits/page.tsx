@@ -61,41 +61,41 @@ export default function HabitsPage() {
     setScheduledDays(getDefaultScheduledDays(frequencyType));
   }, [frequencyType]);
 
-useEffect(() => {
-  async function fetchData() {
-    if (!userId) return;
+  useEffect(() => {
+    async function fetchData() {
+      if (!userId) return;
 
-    try {
-      setIsLoading(true);
-      let cats = await getCategories(userId);
+      try {
+        setIsLoading(true);
+        let cats = await getCategories(userId);
 
-      if (cats.length === 0) {
-        cats = await createDefaultCategories(userId);
+        if (cats.length === 0) {
+          cats = await createDefaultCategories(userId);
+        }
+
+        const [habitsData, rewardsData] = await Promise.all([
+          getHabitsWithStats(userId),
+          getRewards(userId)
+        ]);
+
+        // Normalize rewards: convert null description → undefined
+        const normalizedRewards = rewardsData.map(r => ({
+          ...r,
+          description: r.description ?? undefined,
+        }));
+
+        setCategories(cats);
+        setHabits(habitsData);
+        setRewards(normalizedRewards); // use normalized rewards here
+      } catch (err) {
+        console.error('Error fetching data:', err);
+      } finally {
+        setIsLoading(false);
       }
-
-      const [habitsData, rewardsData] = await Promise.all([
-        getHabitsWithStats(userId),
-        getRewards(userId)
-      ]);
-
-      // Normalize rewards: convert null description → undefined
-      const normalizedRewards = rewardsData.map(r => ({
-        ...r,
-        description: r.description ?? undefined,
-      }));
-
-      setCategories(cats);
-      setHabits(habitsData);
-      setRewards(normalizedRewards); // use normalized rewards here
-    } catch (err) {
-      console.error('Error fetching data:', err);
-    } finally {
-      setIsLoading(false);
     }
-  }
 
-  fetchData();
-}, [userId]);
+    fetchData();
+  }, [userId]);
 
   const getFrequencyText = (type: FrequencyType, value: number) => {
     switch (type) {
@@ -188,13 +188,29 @@ useEffect(() => {
       setHabits(habitsData);
     } catch (err) {
       console.error('Error saving habit:', err);
-      // Log detailed error information
+
+      let errorMessage = 'Unknown error';
+      let errorDetail = '';
+
       if (err instanceof Error) {
-        console.error('Error message:', err.message);
-        console.error('Error stack:', err.stack);
+        errorMessage = err.message;
+        // Check for Supabase/PostgREST specific errors
+        if ('code' in err) {
+          errorDetail = ` (Code: ${(err as any).code})`;
+        }
+        if ('details' in err && (err as any).details) {
+          errorDetail += ` - ${(err as any).details}`;
+        }
+        if ('hint' in err && (err as any).hint) {
+          errorDetail += ` (Hint: ${(err as any).hint})`;
+        }
+        console.error('Full error object:', JSON.stringify(err, null, 2));
+      } else if (typeof err === 'object' && err !== null) {
+        errorMessage = JSON.stringify(err);
       }
-      // Show error to user
-      alert(`Failed to save habit: ${err instanceof Error ? err.message : 'Unknown error'}`);
+
+      // Show enhanced error to user
+      alert(`Failed to save habit: ${errorMessage}${errorDetail}`);
     } finally {
       setIsSubmitting(false);
     }

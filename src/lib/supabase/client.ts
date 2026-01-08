@@ -14,6 +14,9 @@ const customFetch = (url: RequestInfo | URL, options: RequestInit = {}) => {
     headers.set('x-user-id', userId);
   }
 
+  // Debug log for authentication headers (only in development or if needed)
+  console.log(`[Supabase Fetch] URL: ${url.toString()}, UserID: ${userId || 'NONE'}`);
+
   return fetch(url, {
     ...options,
     headers,

@@ -134,9 +134,22 @@ monthly_week_occurrences JSONB       -- e.g., [1, 3] for 1st and 3rd
 008_add_session_setter.sql          -- RLS session variable function
 009_remove_weekly_frequency.sql     -- Remove 'weekly' frequency type
 010_add_hide_when_quota_reached.sql -- Add hide_when_quota_reached column
+016_robust_auth.sql                 -- Harden current_user_id() for RLS
 ```
 
 ## Latest Changes
+
+### ✅ Detailed Error Handling & RLS Robustness (Jan 2026)
+- **Improved habit creation error visibility**: Updated frontend to show detailed Postgres error codes and messages
+  - Replaced generic "Unknown error" with specific field/policy error details
+  - Added full error object logging to console for remote debugging
+- **Hardened RLS authentication**: Redefined `current_user_id()` function in database
+  - Safely handles missing or malformed `request.headers` JSON
+  - Added UUID validation before casting to prevent fatal SQL errors
+  - Ensures session restoration works robustly for new user accounts
+- **Database client logging**: Added debug logs to `src/lib/supabase/client.ts`
+  - Logs URL and User ID for every fetch request to verify header injection
+  - Helps troubleshoot cross-device authentication issues
 
 ### ✅ Bug Fixes & Streak Feature (Jan 2026)
 - **Fixed today view UI not updating**: Optimistic update now correctly updates `is_completed_today` and completion counters
