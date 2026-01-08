@@ -139,6 +139,13 @@ monthly_week_occurrences JSONB       -- e.g., [1, 3] for 1st and 3rd
 
 ## Latest Changes
 
+### ✅ Case-Insensitive Auth & Mobile Fix (Jan 2026)
+- **Fixed mobile habit creation error**: Resolved "new row violates row-level security policy" error occurring on some devices/proxies.
+- **Case-insensitive header parsing**: Refactored `current_user_id()` database function to find `x-user-id` case-insensitively in `request.headers`.
+  - Fixes issues where mobile browsers capitalize headers (e.g., `X-User-Id`), which previously caused RLS to fail.
+- **Redundant header injection**: Updated Supabase client to send both lowercase and capitalized versions of the user ID header for maximum compatibility.
+- **Improved error diagnostics**: Added browser user-agent and user ID state to the frontend error alert for faster remote troubleshooting.
+
 ### ✅ Detailed Error Handling & RLS Robustness (Jan 2026)
 - **Improved habit creation error visibility**: Updated frontend to show detailed Postgres error codes and messages
   - Replaced generic "Unknown error" with specific field/policy error details

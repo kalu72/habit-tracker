@@ -11,11 +11,15 @@ const customFetch = (url: RequestInfo | URL, options: RequestInit = {}) => {
 
   const headers = new Headers(options.headers);
   if (userId) {
+    // We set it in two ways just to be absolutely sure PostgREST sees it
     headers.set('x-user-id', userId);
+    headers.set('X-User-Id', userId);
   }
 
   // Debug log for authentication headers (only in development or if needed)
-  console.log(`[Supabase Fetch] URL: ${url.toString()}, UserID: ${userId || 'NONE'}`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Supabase Fetch] URL: ${url.toString()}, UserID: ${userId || 'NONE'}`);
+  }
 
   return fetch(url, {
     ...options,

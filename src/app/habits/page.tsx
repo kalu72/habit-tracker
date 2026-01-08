@@ -210,7 +210,8 @@ export default function HabitsPage() {
       }
 
       // Show enhanced error to user
-      alert(`Failed to save habit: ${errorMessage}${errorDetail}`);
+      const systemInfo = `\n\n(Debug Info: UserID=${userId || 'MISSING'}, Browser=${typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 50) + '...' : 'Unknown'})`;
+      alert(`Failed to save habit: ${errorMessage}${errorDetail}${systemInfo}`);
     } finally {
       setIsSubmitting(false);
     }
