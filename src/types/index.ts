@@ -4,6 +4,9 @@ export type FrequencyType = 'daily' | 'times_per_week' | 'times_per_month' | 'mo
 // Reward types for punchcard claiming
 export type RewardType = 'direct' | 'jackpot';
 
+// Reward bag classification
+export type RewardBag = 'baby' | 'baller';
+
 // Day of week type (0=Sunday, 1=Monday, ..., 6=Saturday)
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -45,6 +48,7 @@ export interface Habit {
   punchcard_last_checked: string;
   reward_type: RewardType | null;
   reward_text: string | null; // For direct rewards
+  jackpot_bag: RewardBag | null; // Which bag to pull from for jackpot rewards
   // Monthly scheduling fields
   monthly_week_occurrences: number[] | null; // e.g., [1, 3] for 1st and 3rd week
   monthly_day_of_week: number | null; // 0-6 for Sunday-Saturday
@@ -83,6 +87,7 @@ export interface Reward {
   description?: string;
   is_active: boolean;
   created_at: string;
+  reward_bag: RewardBag; // 'baby' or 'baller'
 }
 
 // Computed habit status for daily view
@@ -127,6 +132,7 @@ export interface CreateHabitInput {
   punchcard_target?: number;
   reward_type?: RewardType | null;
   reward_text?: string | null;
+  jackpot_bag?: RewardBag | null;
   // Monthly scheduling fields
   monthly_week_occurrences?: number[] | null;
   monthly_day_of_week?: number | null;
@@ -143,6 +149,7 @@ export interface CreateCategoryInput {
 export interface CreateRewardInput {
   name: string;
   description?: string;
+  reward_bag?: RewardBag; // Defaults to 'baller'
 }
 
 // Default categories

@@ -214,3 +214,64 @@ select:focus-visible {
 .animate-fadeIn {
   animation: fadeIn 0.5s ease-out forwards;
 }
+
+/* Jackpot animation phases */
+@keyframes jackpot-wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-8deg) scale(1.02); }
+  75% { transform: rotate(8deg) scale(1.02); }
+}
+
+@keyframes jackpot-jump {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-15px) rotate(-5deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  75% { transform: translateY(-15px) rotate(5deg); }
+}
+
+@keyframes jackpot-intense {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+    filter: drop-shadow(0 0 10px rgba(234, 179, 8, 0.5));
+  }
+  12.5% {
+    transform: rotate(-12deg) scale(1.1);
+    filter: drop-shadow(0 0 25px rgba(234, 179, 8, 0.8));
+  }
+  25% {
+    transform: rotate(12deg) scale(1.15) translateY(-10px);
+    filter: drop-shadow(0 0 35px rgba(234, 179, 8, 1));
+  }
+  37.5% {
+    transform: rotate(-10deg) scale(1.1);
+    filter: drop-shadow(0 0 25px rgba(234, 179, 8, 0.8));
+  }
+  50% {
+    transform: rotate(10deg) scale(1.15) translateY(-15px);
+    filter: drop-shadow(0 0 40px rgba(234, 179, 8, 1));
+  }
+  62.5% {
+    transform: rotate(-12deg) scale(1.1);
+    filter: drop-shadow(0 0 30px rgba(234, 179, 8, 0.9));
+  }
+  75% {
+    transform: rotate(12deg) scale(1.15) translateY(-10px);
+    filter: drop-shadow(0 0 35px rgba(234, 179, 8, 1));
+  }
+  87.5% {
+    transform: rotate(-8deg) scale(1.1);
+    filter: drop-shadow(0 0 20px rgba(234, 179, 8, 0.7));
+  }
+}
+
+.animate-jackpot-wiggle {
+  animation: jackpot-wiggle 0.4s ease-in-out infinite;
+}
+
+.animate-jackpot-jump {
+  animation: jackpot-jump 0.35s ease-in-out infinite;
+}
+
+.animate-jackpot-intense {
+  animation: jackpot-intense 0.25s ease-in-out infinite;
+}

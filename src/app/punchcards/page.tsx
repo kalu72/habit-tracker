@@ -113,11 +113,17 @@ export default function PunchcardsPage() {
   };
 
   const handleJackpotSpin = () => {
-    if (rewards.length === 0) return;
+    if (!selectedHabit) return;
 
-    // Random selection
-    const randomIndex = Math.floor(Math.random() * rewards.length);
-    setWonReward(rewards[randomIndex]);
+    // Filter rewards by the habit's jackpot_bag setting
+    const bagType = selectedHabit.jackpot_bag || 'baller';
+    const eligibleRewards = rewards.filter(r => r.reward_bag === bagType);
+
+    if (eligibleRewards.length === 0) return;
+
+    // Random selection from filtered rewards
+    const randomIndex = Math.floor(Math.random() * eligibleRewards.length);
+    setWonReward(eligibleRewards[randomIndex]);
   };
 
   if (isLoading) {
@@ -202,7 +208,8 @@ export default function PunchcardsPage() {
       {showJackpotModal && selectedHabit && (
         <JackpotModal
           habit={selectedHabit}
-          rewards={rewards}
+          rewards={rewards.filter(r => r.reward_bag === (selectedHabit.jackpot_bag || 'baller'))}
+          bagType={selectedHabit.jackpot_bag || 'baller'}
           wonReward={wonReward}
           onSpin={handleJackpotSpin}
           onConfirm={handleClaimConfirm}
@@ -243,10 +250,11 @@ function DirectRewardModal({
   );
 }
 
-// Jackpot Modal
+// Jackpot Modal with enhanced animation
 function JackpotModal({
   habit,
   rewards,
+  bagType,
   wonReward,
   onSpin,
   onConfirm,
@@ -254,19 +262,57 @@ function JackpotModal({
 }: {
   habit: HabitWithPunchcard;
   rewards: Reward[];
+  bagType: 'baby' | 'baller';
   wonReward: Reward | null;
   onSpin: () => void;
   onConfirm: () => void;
   onClose: () => void;
 }) {
-  const [isSpinning, setIsSpinning] = useState(false);
+  const [animationPhase, setAnimationPhase] = useState<'ready' | 'phase1' | 'phase2' | 'phase3' | 'reveal'>('ready');
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   const handleSpin = () => {
-    setIsSpinning(true);
-    onSpin();
+    // Start animation phases
+    setAnimationPhase('phase1');
+    setCountdown(3);
+
+    // Phase 1: 0-1s - slow wiggle
     setTimeout(() => {
-      setIsSpinning(false);
+      setAnimationPhase('phase2');
+      setCountdown(2);
+    }, 1000);
+
+    // Phase 2: 1-2s - faster wiggle + jump
+    setTimeout(() => {
+      setAnimationPhase('phase3');
+      setCountdown(1);
+    }, 2000);
+
+    // Phase 3: 2-3s - intense wiggle with glow
+    // Select the reward during this phase
+    setTimeout(() => {
+      onSpin();
+    }, 2500);
+
+    // Reveal
+    setTimeout(() => {
+      setAnimationPhase('reveal');
+      setCountdown(null);
     }, 3000);
+  };
+
+  // Get animation class based on phase
+  const getAnimationClass = () => {
+    switch (animationPhase) {
+      case 'phase1':
+        return 'animate-jackpot-wiggle';
+      case 'phase2':
+        return 'animate-jackpot-jump';
+      case 'phase3':
+        return 'animate-jackpot-intense';
+      default:
+        return '';
+    }
   };
 
   if (rewards.length === 0) {
@@ -274,8 +320,10 @@ function JackpotModal({
       <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
         <div className="bg-card p-8 rounded-3xl max-w-md w-full text-center">
           <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold mb-2">No Rewards Available</h2>
-          <p className="text-muted-foreground mb-6">Add rewards to your bag to use the jackpot!</p>
+          <h2 className="text-2xl font-bold mb-2">No {bagType === 'baby' ? 'Baby' : 'Baller'} Rewards</h2>
+          <p className="text-muted-foreground mb-6">
+            Add {bagType === 'baby' ? 'baby' : 'baller'} rewards to your bag to use this jackpot!
+          </p>
           <button
             onClick={onClose}
             className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-bold"
@@ -287,23 +335,60 @@ function JackpotModal({
     );
   }
 
+  const isSpinning = animationPhase !== 'ready' && animationPhase !== 'reveal';
+
   return (
     <div className="fixed inset-0 z-50 bg-gradient-to-b from-purple-900 to-indigo-900 flex items-center justify-center p-4">
-      {!wonReward ? (
+      {!wonReward || animationPhase !== 'reveal' ? (
         <div className="text-center">
-          <div className={cn("text-8xl mb-6", isSpinning && "animate-bounce")}>🎰</div>
-          <h2 className="text-3xl font-bold text-white mb-4">Jackpot Time!</h2>
-          <p className="text-white/80 mb-6">Tap to spin for a random reward!</p>
+          {/* Bag indicator */}
+          <div className={cn(
+            "inline-block px-4 py-1 rounded-full text-sm font-medium mb-4",
+            bagType === 'baby'
+              ? "bg-blue-500/30 text-blue-200"
+              : "bg-purple-500/30 text-purple-200"
+          )}>
+            {bagType === 'baby' ? 'Baby Bag' : 'Baller Bag'}
+          </div>
+
+          {/* Animated slot machine */}
+          <div className={cn(
+            "text-8xl mb-6 transition-all duration-200",
+            getAnimationClass()
+          )}>
+            🎰
+          </div>
+
+          {/* Countdown */}
+          {countdown !== null && (
+            <div className="text-6xl font-bold text-yellow-400 mb-4 animate-pulse">
+              {countdown}
+            </div>
+          )}
+
+          <h2 className="text-3xl font-bold text-white mb-4">
+            {isSpinning ? 'Spinning...' : 'Jackpot Time!'}
+          </h2>
+
+          {!isSpinning && (
+            <p className="text-white/80 mb-6">Tap to spin for a random reward!</p>
+          )}
+
           <button
             onClick={handleSpin}
             disabled={isSpinning}
-            className="px-8 py-4 bg-yellow-400 text-yellow-900 rounded-2xl font-bold text-xl hover:bg-yellow-300 disabled:opacity-50"
+            className={cn(
+              "px-8 py-4 rounded-2xl font-bold text-xl transition-all",
+              isSpinning
+                ? "bg-yellow-600 text-yellow-200 cursor-not-allowed"
+                : "bg-yellow-400 text-yellow-900 hover:bg-yellow-300 hover:scale-105"
+            )}
           >
             {isSpinning ? 'SPINNING...' : 'SPIN!'}
           </button>
         </div>
       ) : (
-        <div className="text-center">
+        <div className="text-center animate-in fade-in zoom-in duration-300">
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-white mb-2">You Won!</h2>
           <div className="bg-white/20 rounded-xl p-6 mb-6">

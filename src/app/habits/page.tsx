@@ -8,7 +8,7 @@ import { getHabitsWithStats, createHabit, updateHabit, deleteHabit } from '@/lib
 import { getCategories, createDefaultCategories, createCategory, updateCategory } from '@/lib/supabase/categories';
 import { getRewards } from '@/lib/supabase/rewards';
 import { getDefaultScheduledDays, DAY_NAMES } from '@/lib/dates';
-import type { HabitWithStatus, Category, Reward, FrequencyType, DayOfWeek } from '@/types';
+import type { HabitWithStatus, Category, Reward, FrequencyType, DayOfWeek, RewardBag } from '@/types';
 import { cn } from '@/lib/utils';
 
 const ICON_OPTIONS = ['✨', '💪', '📚', '❤️', '⚡', '🎯', '🧘', '💼', '🎨', '🌱', '💰', '🏃', '🍎', '💤', '🧠', '🐕', '🏠'];
@@ -41,6 +41,7 @@ export default function HabitsPage() {
   const [punchcardTarget, setPunchcardTarget] = useState(10);
   const [rewardType, setRewardType] = useState<'direct' | 'jackpot' | null>(null);
   const [rewardText, setRewardText] = useState('');
+  const [jackpotBag, setJackpotBag] = useState<RewardBag>('baller');
 
   // Hide when quota reached (for times_per_week/month)
   const [hideWhenQuotaReached, setHideWhenQuotaReached] = useState(false);
@@ -124,6 +125,7 @@ export default function HabitsPage() {
     setPunchcardTarget(10);
     setRewardType(null);
     setRewardText('');
+    setJackpotBag('baller');
     setHideWhenQuotaReached(false);
     setMonthlyDayOfWeek(1);
     setMonthlyWeekOccurrences([1]);
@@ -142,6 +144,7 @@ export default function HabitsPage() {
     setPunchcardTarget(habit.punchcard_target);
     setRewardType(habit.reward_type);
     setRewardText(habit.reward_text || '');
+    setJackpotBag(habit.jackpot_bag || 'baller');
     setHideWhenQuotaReached(habit.hide_when_quota_reached);
     setMonthlyDayOfWeek(habit.monthly_day_of_week || 1);
     setMonthlyWeekOccurrences(habit.monthly_week_occurrences || [1]);
@@ -165,6 +168,7 @@ export default function HabitsPage() {
         punchcard_target: punchcardTarget,
         reward_type: punchcardEnabled ? rewardType : null,
         reward_text: punchcardEnabled && rewardType === 'direct' ? rewardText.trim() : null,
+        jackpot_bag: punchcardEnabled && rewardType === 'jackpot' ? jackpotBag : null,
         hide_when_quota_reached: hideWhenQuotaReached,
         monthly_day_of_week: frequencyType === 'monthly_on_weeks' ? monthlyDayOfWeek : null,
         monthly_week_occurrences: frequencyType === 'monthly_on_weeks' ? monthlyWeekOccurrences : null,
@@ -579,12 +583,29 @@ export default function HabitsPage() {
                   )}
 
                   {rewardType === 'jackpot' && (
-                    <p className="text-xs text-muted-foreground">
-                      A random reward will be selected from your reward bag when you complete this punchcard.
-                      {rewards.filter(r => r.is_active).length === 0 && (
-                        <span className="text-destructive"> Add rewards to your bag first!</span>
-                      )}
-                    </p>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5">Which Reward Bag?</label>
+                        <select
+                          value={jackpotBag}
+                          onChange={(e) => setJackpotBag(e.target.value as RewardBag)}
+                          className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                          <option value="baby">Baby Bag (small wins)</option>
+                          <option value="baller">Baller Bag (big wins)</option>
+                        </select>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        A random reward will be selected from your {jackpotBag === 'baby' ? 'Baby' : 'Baller'} bag.
+                        {(() => {
+                          const bagRewards = rewards.filter(r => r.is_active && r.reward_bag === jackpotBag);
+                          if (bagRewards.length === 0) {
+                            return <span className="text-destructive"> No rewards in this bag yet!</span>;
+                          }
+                          return <span className="text-muted-foreground"> ({bagRewards.length} reward{bagRewards.length !== 1 ? 's' : ''} available)</span>;
+                        })()}
+                      </p>
+                    </div>
                   )}
                 </div>
               )}

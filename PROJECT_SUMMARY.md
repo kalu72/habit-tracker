@@ -94,7 +94,7 @@ src/components/
 - **habits**: name, category_id, frequency settings, scheduled_days, punchcard fields, monthly scheduling
 - **habit_completions**: completion records (one per completion)
 - **categories**: name, icon, color
-- **rewards**: name, description (used for jackpot only)
+- **rewards**: name, description, reward_bag ('baby' or 'baller')
 - **users**: PIN auth
 
 ### Punchcard Fields (on habits table)
@@ -105,6 +105,7 @@ punchcard_current INTEGER            -- Current progress (persistent)
 punchcard_last_checked TIMESTAMPTZ   -- For animating new punches
 reward_type TEXT                     -- 'direct' or 'jackpot'
 reward_text TEXT                     -- Custom reward text (direct only)
+jackpot_bag TEXT                     -- 'baby' or 'baller' (for jackpot reward type)
 hide_when_quota_reached BOOLEAN      -- Hide from Today page when quota met (times_per_week/month only)
 ```
 
@@ -135,9 +136,28 @@ monthly_week_occurrences JSONB       -- e.g., [1, 3] for 1st and 3rd
 009_remove_weekly_frequency.sql     -- Remove 'weekly' frequency type
 010_add_hide_when_quota_reached.sql -- Add hide_when_quota_reached column
 016_robust_auth.sql                 -- Harden current_user_id() for RLS
+018_reward_bags.sql                 -- Two reward bag system (Baby/Baller)
 ```
 
 ## Latest Changes
+
+### ✅ Two Reward Bags & Enhanced Jackpot Animation (Jan 2026)
+- **Two Reward Bag System**: Rewards can now be classified as "Baby" (small wins) or "Baller" (big wins)
+  - New `reward_bag` column on rewards table ('baby' or 'baller', defaults to 'baller')
+  - Rewards page shows bag badge and allows selecting bag when creating/editing
+  - Existing rewards default to "Baller" bag
+- **Habit Jackpot Bag Selection**: When configuring a habit with jackpot reward type, choose which bag to pull from
+  - New `jackpot_bag` column on habits table
+  - Dropdown selector in habit form when jackpot is selected
+  - Shows count of available rewards in selected bag
+  - Existing jackpot habits default to "Baller" bag
+- **Enhanced Jackpot Animation**: 3-phase progressive animation on spin
+  - Phase 1 (0-1s): Slow wiggle animation
+  - Phase 2 (1-2s): Faster wiggle with jump movement
+  - Phase 3 (2-3s): Intense wiggle with golden glow effect
+  - Visual countdown (3, 2, 1) during spin
+  - Bag type indicator shown in modal
+- **Empty Bag Handling**: Shows specific error message when selected bag has no rewards
 
 ### ✅ Case-Insensitive Auth & Mobile Fix (Jan 2026)
 - **Fixed mobile habit creation error**: Resolved "new row violates row-level security policy" error occurring on some devices/proxies.

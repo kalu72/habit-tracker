@@ -20,6 +20,7 @@ import {
   updateReward,
   deleteReward,
   type Reward,
+  type RewardBag,
 } from '@/lib/supabase/rewards';
 import { cn } from '@/lib/utils';
 
@@ -28,9 +29,11 @@ export default function RewardsPage() {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newReward, setNewReward] = useState('');
+  const [newRewardBag, setNewRewardBag] = useState<RewardBag>('baller');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
   const [editName, setEditName] = useState('');
+  const [editBag, setEditBag] = useState<RewardBag>('baller');
 
   // Fetch data
   useEffect(() => {
@@ -58,9 +61,11 @@ export default function RewardsPage() {
       const reward = await createReward({
         user_id: userId,
         name: newReward.trim(),
+        reward_bag: newRewardBag,
       });
       setRewards(prev => [...prev, reward]);
       setNewReward('');
+      setNewRewardBag('baller');
       setIsAddDialogOpen(false);
     } catch (err) {
       console.error('Error adding reward:', err);
@@ -72,10 +77,14 @@ export default function RewardsPage() {
     if (!editingReward || !editName.trim()) return;
 
     try {
-      const updated = await updateReward(editingReward.id, { name: editName.trim() });
+      const updated = await updateReward(editingReward.id, {
+        name: editName.trim(),
+        reward_bag: editBag,
+      });
       setRewards(prev => prev.map(r => r.id === updated.id ? updated : r));
       setEditingReward(null);
       setEditName('');
+      setEditBag('baller');
     } catch (err) {
       console.error('Error updating reward:', err);
     }
@@ -134,6 +143,31 @@ export default function RewardsPage() {
                     onKeyDown={(e) => e.key === 'Enter' && handleAddReward()}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Reward Bag</Label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="newRewardBag"
+                        checked={newRewardBag === 'baby'}
+                        onChange={() => setNewRewardBag('baby')}
+                        className="w-4 h-4 text-primary"
+                      />
+                      <span className="text-sm">Baby (small wins)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="newRewardBag"
+                        checked={newRewardBag === 'baller'}
+                        onChange={() => setNewRewardBag('baller')}
+                        className="w-4 h-4 text-primary"
+                      />
+                      <span className="text-sm">Baller (big wins)</span>
+                    </label>
+                  </div>
+                </div>
                 <Button className="w-full" onClick={handleAddReward}>
                   Add to Bag
                 </Button>
@@ -167,37 +201,74 @@ export default function RewardsPage() {
                   className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
                 >
                   {editingReward?.id === reward.id ? (
-                    <div className="flex-1 flex items-center gap-2">
-                      <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="h-8"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleEditReward();
-                          if (e.key === 'Escape') {
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="h-8"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleEditReward();
+                            if (e.key === 'Escape') {
+                              setEditingReward(null);
+                              setEditName('');
+                              setEditBag('baller');
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="editBag"
+                            checked={editBag === 'baby'}
+                            onChange={() => setEditBag('baby')}
+                            className="w-3.5 h-3.5"
+                          />
+                          <span className="text-xs">Baby</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="editBag"
+                            checked={editBag === 'baller'}
+                            onChange={() => setEditBag('baller')}
+                            className="w-3.5 h-3.5"
+                          />
+                          <span className="text-xs">Baller</span>
+                        </label>
+                        <div className="flex-1" />
+                        <Button size="sm" variant="ghost" onClick={handleEditReward}>
+                          Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
                             setEditingReward(null);
                             setEditName('');
-                          }
-                        }}
-                      />
-                      <Button size="sm" variant="ghost" onClick={handleEditReward}>
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditingReward(null);
-                          setEditName('');
-                        }}
-                      >
-                        Cancel
-                      </Button>
+                            setEditBag('baller');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <>
-                      <span>{reward.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span>{reward.name}</span>
+                        <span className={cn(
+                          "text-xs px-2 py-0.5 rounded-full",
+                          reward.reward_bag === 'baby'
+                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                            : "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                        )}>
+                          {reward.reward_bag === 'baby' ? 'Baby' : 'Baller'}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
@@ -206,6 +277,7 @@ export default function RewardsPage() {
                           onClick={() => {
                             setEditingReward(reward);
                             setEditName(reward.name);
+                            setEditBag(reward.reward_bag);
                           }}
                         >
                           Edit
