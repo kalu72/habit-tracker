@@ -157,6 +157,8 @@ monthly_week_occurrences JSONB       -- e.g., [1, 3] for 1st and 3rd
   - Phase 3 (2-3s): Intense wiggle with golden glow effect
   - Visual countdown (3, 2, 1) during spin
   - Bag type indicator shown in modal
+  - Confetti burst on reward reveal
+  - 0.5s fade-in transition on reward text
 - **Empty Bag Handling**: Shows specific error message when selected bag has no rewards
 
 ### ✅ Case-Insensitive Auth & Mobile Fix (Jan 2026)
