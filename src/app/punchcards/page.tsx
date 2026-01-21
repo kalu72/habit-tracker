@@ -270,6 +270,21 @@ function JackpotModal({
 }) {
   const [animationPhase, setAnimationPhase] = useState<'ready' | 'phase1' | 'phase2' | 'phase3' | 'reveal'>('ready');
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [showRewardText, setShowRewardText] = useState(false);
+
+  // Trigger confetti and fade-in on reveal
+  useEffect(() => {
+    if (animationPhase === 'reveal' && wonReward) {
+      // Fire confetti
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.5 }
+      });
+      // Delay showing reward text for fade-in effect
+      setTimeout(() => setShowRewardText(true), 50);
+    }
+  }, [animationPhase, wonReward]);
 
   const handleSpin = () => {
     // Start animation phases
@@ -388,10 +403,15 @@ function JackpotModal({
           </button>
         </div>
       ) : (
-        <div className="text-center animate-in fade-in zoom-in duration-300">
+        <div className="text-center">
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-white mb-2">You Won!</h2>
-          <div className="bg-white/20 rounded-xl p-6 mb-6">
+          <div
+            className={cn(
+              "bg-white/20 rounded-xl p-6 mb-6 transition-all duration-500",
+              showRewardText ? "opacity-100 scale-100" : "opacity-0 scale-95"
+            )}
+          >
             <p className="text-2xl font-bold text-white">{wonReward.name}</p>
             {wonReward.description && (
               <p className="text-white/80 text-sm mt-1">{wonReward.description}</p>
@@ -399,7 +419,10 @@ function JackpotModal({
           </div>
           <button
             onClick={onConfirm}
-            className="px-8 py-3 bg-white text-purple-600 rounded-xl font-bold text-lg hover:bg-white/90"
+            className={cn(
+              "px-8 py-3 bg-white text-purple-600 rounded-xl font-bold text-lg hover:bg-white/90 transition-all duration-500",
+              showRewardText ? "opacity-100" : "opacity-0"
+            )}
           >
             Claim & Continue
           </button>
