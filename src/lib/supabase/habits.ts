@@ -34,14 +34,17 @@ export async function getHabitsWithStats(userId: string): Promise<HabitWithStatu
   if (habitsError) throw habitsError;
   if (!habits) return [];
 
-  // Get completions for today, this week, and this month
+  // Get completions for today, this week, and this month.
+  // Fetch from the earlier of startOfWeek or startOfMonth — this week can
+  // start in the previous month (e.g. Sunday March 1 → week started Feb 23).
   const habitIds = habits.map(h => h.id);
+  const fetchStart = startOfWeek < startOfMonth ? startOfWeek : startOfMonth;
 
   const { data: completions, error: completionsError } = await supabase
     .from('habit_completions')
     .select('habit_id, completed_at')
     .in('habit_id', habitIds)
-    .gte('completed_at', startOfMonth.toISOString());
+    .gte('completed_at', fetchStart.toISOString());
 
   if (completionsError) throw completionsError;
 
@@ -70,7 +73,9 @@ export async function getHabitsWithStats(userId: string): Promise<HabitWithStatu
       new Date(c.completed_at) >= startOfWeek
     ).length;
 
-    const completionsThisMonth = habitCompletions.length;
+    const completionsThisMonth = habitCompletions.filter(c =>
+      new Date(c.completed_at) >= startOfMonth
+    ).length;
 
     // Determine availability based on frequency
     const isAvailable = calculateAvailability(
